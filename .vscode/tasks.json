@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "deploy",
+			"problemMatcher": [],
+			"label": "npm: deploy",
+			"detail": "npx wrangler deploy ./src/index.js --name tfs-autofill"
+		}
+	]
+}
