@@ -5,7 +5,7 @@ export const notion = {
     headers: {
         'Authorization': 'Bearer secret_10UKjfchxCFb6Q1usZ449iJHmWI5VV71ja6zNbftcYc',
         'Content-Type': 'application/json',
-        'Notion-Version': '2025-09-03'
+        'Notion-Version': '2022-06-28'
     },
     baseUrl: 'https://api.notion.com/v1',
     databaseIds: {
