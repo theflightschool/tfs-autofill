@@ -5,7 +5,8 @@ export const notion = {
     headers: {
         'Authorization': 'Bearer secret_10UKjfchxCFb6Q1usZ449iJHmWI5VV71ja6zNbftcYc',
         'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28'
+        // Notion API version that introduces data_sources
+        'Notion-Version': '2025-09-03'
     },
     baseUrl: 'https://api.notion.com/v1',
     databaseIds: {
@@ -15,6 +16,8 @@ export const notion = {
         states: 'c2259d87985040998e1d027979d5589e',
         countries: '98f0f889fa754ab4a41009726a2c516d'
     },
+    // Cache of database_id -> primary data_source_id
+    dataSourceCache: new Map(),
     usPageId: 'd00b101ca5344f11b2b00883b901088e',
     getCountryPageId: getCountryPageId,
     getStatePage: getStatePage,
@@ -26,11 +29,35 @@ export const notion = {
     updateOrg: updateOrg
 }
 
+// In API version 2025-09-03+, "databases" became containers and most row operations moved to "data_sources".
+// This helper resolves a database container ID to its primary data source ID and caches the result.
+async function getPrimaryDataSourceId(databaseId) {
+    const cached = notion.dataSourceCache.get(databaseId);
+    if (cached) return cached;
+
+    const url = `${notion.baseUrl}/databases/${databaseId}`;
+    const options = {
+        method: 'GET',
+        headers: notion.headers
+    };
+
+    const body = await fetchWithRetry(url, options);
+    const primary = body?.data_sources?.[0];
+
+    if (!primary?.id) {
+        throw new Error(`No data sources found under database ${databaseId}.`);
+    }
+
+    notion.dataSourceCache.set(databaseId, primary.id);
+    return primary.id;
+}
+
 async function getCountryPageId(countryCode, slackLog) {
 
     slackLog.message = "Country Code: " + countryCode;
 
-    const url = `${notion.baseUrl}/databases/${notion.databaseIds.countries}/query`;
+    const dataSourceId = await getPrimaryDataSourceId(notion.databaseIds.countries);
+    const url = `${notion.baseUrl}/data_sources/${dataSourceId}/query`;
     const options = {
         method: 'POST',
         headers: notion.headers,
@@ -67,7 +94,8 @@ async function getStatePage(stateCodeOrName) {
         propertyType = "title";
     }
 
-    const url = `${notion.baseUrl}/databases/${notion.databaseIds.states}/query`;
+    const dataSourceId = await getPrimaryDataSourceId(notion.databaseIds.states);
+    const url = `${notion.baseUrl}/data_sources/${dataSourceId}/query`;
     const options = {
         method: 'POST',
         headers: notion.headers,
@@ -131,7 +159,8 @@ async function getCityPageId(cityName, stateCode, countryCode) {
         })
     }
 
-    const url = `${notion.baseUrl}/databases/${notion.databaseIds.cities}/query`;
+    const dataSourceId = await getPrimaryDataSourceId(notion.databaseIds.cities);
+    const url = `${notion.baseUrl}/data_sources/${dataSourceId}/query`;
 
     const options = {
         method: 'POST',
@@ -155,7 +184,8 @@ async function createCity(cityName, statePageId, countryPageId) {
         headers: notion.headers,
         body: {
             parent: {
-                database_id: notion.databaseIds.cities
+                type: "data_source_id",
+                data_source_id: await getPrimaryDataSourceId(notion.databaseIds.cities)
             },
             properties: {
                 "VwL%3E": {
@@ -202,7 +232,8 @@ async function createCity(cityName, statePageId, countryPageId) {
 
 async function getOrgPageId(orgName) {
 
-    const url = `${notion.baseUrl}/databases/${notion.databaseIds.organizations}/query`;
+    const dataSourceId = await getPrimaryDataSourceId(notion.databaseIds.organizations);
+    const url = `${notion.baseUrl}/data_sources/${dataSourceId}/query`;
 
     const options = {
         method: 'POST',
@@ -233,7 +264,8 @@ async function createOrg(name, linkedInProfileUrl) {
         headers: notion.headers,
         body: {
             parent: {
-                database_id: `${notion.databaseIds.organizations}`
+                type: "data_source_id",
+                data_source_id: await getPrimaryDataSourceId(notion.databaseIds.organizations)
             },
             properties: {
                 title: {
