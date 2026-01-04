@@ -5,15 +5,15 @@ export const notion = {
     headers: {
         'Authorization': 'Bearer secret_10UKjfchxCFb6Q1usZ449iJHmWI5VV71ja6zNbftcYc',
         'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28'
+        'Notion-Version': '2025-09-03'
     },
     baseUrl: 'https://api.notion.com/v1',
-    databaseIds: {
-        people: 'a7b33531aba34c50b393eb5912e6695b',
-        organizations: '0cb8f88de4874db89aa71834a372abaa',
-        cities: 'd44e7ace59044b5d803f54a4295faff1',
-        states: 'c2259d87985040998e1d027979d5589e',
-        countries: '98f0f889fa754ab4a41009726a2c516d'
+    dataSourceIds: {
+        people: '307d0540-d541-485f-b311-4a999638d4fc',
+        organizations: '6db10c08-92c0-46a7-a8bb-74fea0f4308e',
+        cities: 'ee9d04b8-4f40-4673-827a-7cbc5e4dc379',
+        states: '1ff78b16-2e75-4ffb-a318-c631f62604e3',
+        countries: '8d2d487f-bebc-44a1-8427-646f69761c6b'
     },
     usPageId: 'd00b101ca5344f11b2b00883b901088e',
     getCountryPageId: getCountryPageId,
@@ -30,7 +30,7 @@ async function getCountryPageId(countryCode, slackLog) {
 
     slackLog.message = "Country Code: " + countryCode;
 
-    const url = `${notion.baseUrl}/databases/${notion.databaseIds.countries}/query`;
+    const url = `${notion.baseUrl}/data_sources/${notion.dataSourceIds.countries}/query`;
     const options = {
         method: 'POST',
         headers: notion.headers,
@@ -67,7 +67,7 @@ async function getStatePage(stateCodeOrName) {
         propertyType = "title";
     }
 
-    const url = `${notion.baseUrl}/databases/${notion.databaseIds.states}/query`;
+    const url = `${notion.baseUrl}/data_sources/${notion.dataSourceIds.states}/query`;
     const options = {
         method: 'POST',
         headers: notion.headers,
@@ -131,7 +131,7 @@ async function getCityPageId(cityName, stateCode, countryCode) {
         })
     }
 
-    const url = `${notion.baseUrl}/databases/${notion.databaseIds.cities}/query`;
+    const url = `${notion.baseUrl}/data_sources/${notion.dataSourceIds.cities}/query`;
 
     const options = {
         method: 'POST',
@@ -155,7 +155,8 @@ async function createCity(cityName, statePageId, countryPageId) {
         headers: notion.headers,
         body: {
             parent: {
-                database_id: notion.databaseIds.cities
+                type: "data_source_id",
+                data_source_id: notion.dataSourceIds.cities
             },
             properties: {
                 "VwL%3E": {
@@ -202,7 +203,7 @@ async function createCity(cityName, statePageId, countryPageId) {
 
 async function getOrgPageId(orgName) {
 
-    const url = `${notion.baseUrl}/databases/${notion.databaseIds.organizations}/query`;
+    const url = `${notion.baseUrl}/data_sources/${notion.dataSourceIds.organizations}/query`;
 
     const options = {
         method: 'POST',
@@ -233,7 +234,8 @@ async function createOrg(name, linkedInProfileUrl) {
         headers: notion.headers,
         body: {
             parent: {
-                database_id: `${notion.databaseIds.organizations}`
+                type: "data_source_id",
+                data_source_id: `${notion.dataSourceIds.organizations}`
             },
             properties: {
                 title: {
